@@ -8,6 +8,7 @@ class Task(Base):
     __tablename__ = 'tasks'
 
     id = Column(Integer, primary_key=True)
+    user_id = Column(String)  # ユーザーごとに分けるなら
     date = Column(String)
     time = Column(String)
     task = Column(String)

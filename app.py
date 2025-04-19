@@ -7,7 +7,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from gemini_util import analyze_task
-from db import add_task, get_all_tasks, delete_task_by_details, save_chat_log
+from db import add_task, get_all_tasks, delete_task_by_details, save_chat_log, update_task
 
 app = Flask(__name__)
 
@@ -17,8 +17,6 @@ LINE_CHANNEL_SECRET = '031c826c752cd2ef1c10e86114d361b6'
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
-
-
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -38,7 +36,6 @@ def handle_message(event):
     user_message = event.message.text.strip()
 
     try:
-        # 会話履歴の保存処理を追加予定
         result = analyze_task(user_id,user_message)
         print("Geminiの応答:", result)
 
@@ -59,7 +56,7 @@ def handle_message(event):
             now = datetime.now()
             filtered_tasks = []
 
-            for task in get_all_tasks():
+            for task in get_all_tasks(user_id):
                 task_date = datetime.strptime(task.date, "%Y-%m-%d").date()
                 if period == "today" and task_date == now.date():
                     filtered_tasks.append(task)
@@ -83,7 +80,7 @@ def handle_message(event):
             date = task_data.get("date")
             task_text = task_data.get("task")
             if date and task_text:
-                success = delete_task_by_details(date, task_text)
+                success = delete_task_by_details(user_id, date, task_text)
                 if success:
                     response_text = f"\U0001F5D1️ 次の予定を削除しました：\n\U0001F4C5 {date}\n\U0001F4DD {task_text}"
                 else:
@@ -96,13 +93,30 @@ def handle_message(event):
             time = task_data.get("time")
             task_text = task_data.get("task")
             if date and time and task_text:
-                add_task(date, time, task_text)
+                add_task(user_id, date, time, task_text)
                 response_text = f"✅ 予定を追加しました！\n\U0001F4C5 {date} {time}\n\U0001F4DD {task_text}"
             else:
                 response_text = "❌ 予定の追加に必要な情報が不足しています。"
 
+        elif action == "update":
+            old_date = task_data.get("old_date")
+            old_time = task_data.get("old_time")
+            old_task = task_data.get("old_task")
+            new_date = task_data.get("new_date")
+            new_time = task_data.get("new_time")
+            new_task = task_data.get("new_task")
+            if all([old_date, old_time, old_task, new_date, new_time, new_task]):
+                success = update_task(user_id, old_date, old_time, old_task, new_date, new_time, new_task)
+                if success:
+                    response_text = f"✅ 予定を変更したよ！\n📅 {old_date} {old_time}「{old_task}」→ {new_date} {new_time}「{new_task}」"
+                else:
+                    response_text = "❌ 変更対象の予定が見つからなかったよ！"
+            else:
+                response_text = "❌ 変更に必要な情報が足りないみたい！"
+
         else:
             response_text = "🤖 ごめんなさい、内容をうまく理解できませんでした\U0001F4A6"
+
 
         save_chat_log(user_id, user_message, response_text)
 
