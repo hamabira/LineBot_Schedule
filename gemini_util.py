@@ -1,49 +1,85 @@
 import os
-import re
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# .env から APIキーを読み込み
-load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# === APIキー読み込みとGemini初期化 ===
+try:
+    load_dotenv()  # .envファイルから環境変数を読み込む
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Geminiの初期化
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
+    if not GEMINI_API_KEY:
+        raise ValueError("❌ GEMINI_API_KEY が見つかりません。.env ファイルを確認してください。")
 
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel("gemini-1.5-flash")  # モデルの指定
+
+except Exception as e:
+    print("🔴 Geminiの初期化エラー:", e)
+    model = None  # エラーがあった場合はNoneを入れて後で使えないようにする
+
+# === AIによる予定解析関数 ===
 def analyze_task(message_text):
+    from datetime import datetime
+
+    if model is None:
+        return '{"action": "error", "response": "Geminiが初期化されていません。"}'
+
+    now = datetime.now()
+    current_date = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M")
+
     prompt = f"""
-    以下の日本語の予定文から、日付（YYYY-MM-DD）、時間（HH:MM）、内容（task）を抽出してください。
-    必ず次のようなJSON形式で出力してください：
+あなたは優しく親しみやすい予定管理AIアシスタントです。
+ユーザーの自然な発話から、必要があれば「予定管理」に関するアクションを抽出し、それ以外は雑談として受け取ってください。
 
-    {{
-      "date": "2025-04-17",
-      "time": "09:00",
-      "task": "レポートを書く"
-    }}
+# 現在の日付と時刻
+今日の日付は {current_date} で、現在の時刻は {current_time} です。
 
-    入力: {message_text}
-    出力:
-    """
+アクションがある場合は、以下のJSON形式で返してください：
+{{
+  "action": "add" or "delete" or "show",
+  "date": "YYYY-MM-DD",    # 任意
+  "time": "HH:MM",         # 任意
+  "task": "予定の内容",     # 任意
+  "index": 予定の番号       # 任意（削除時）
+  "period": "today" または "week" または "all"（表示のときのみ）
+}}
+
+アクションが含まれない雑談メッセージの場合は、以下のJSON形式で返してください：
+{{
+  "action": "chat",
+  "response": "ユーザーへの優しい返事"
+}}
+
+例：
+- 「今日の予定を教えて」 → {{"action": "show", "period": "today"}}
+- 「今週の予定は？」 → {{"action": "show", "period": "week"}}
+- 「予定を全部見せて」 → {{"action": "show", "period": "all"}}
+
+
+# ユーザーの入力：
+{message_text}
+
+# 出力：
+"""
 
     try:
-        print("🎯 送信プロンプト:", prompt)
         response = model.generate_content(prompt)
-        print("✅ Geminiの応答:", response.text)
+        print("🔵 Geminiの生返答:\n", response.text)  # ← ここ追加！
+        result_text = response.text.strip().replace("```json", "").replace("```", "").strip()
 
-        # JSONだけを抜き出す（{〜}の中身）
-        match = re.search(r'\{[\s\S]*?\}', response.text)
-        if match:
-            return match.group(0)
-        else:
-            raise ValueError("JSON形式が見つかりませんでした")
+        # JSONっぽい部分だけ取り出す（```json が含まれていた場合）
+        if "```" in result_text:
+            result_text = result_text.split("```")[-2]  # ```json の中身だけ抜き出す
+        result_text = result_text.strip()
 
+        return result_text
     except Exception as e:
-        print("❌ Gemini API呼び出しでエラー:", e)
-        return '{"date": "不明", "time": "不明", "task": "不明"}'
+        print("❌ Geminiエラー:", e)
+        return '{"action": "unknown"}'
 
-# 単体テスト用
+# === テスト実行（開発中のチェック用） ===
 if __name__ == "__main__":
-    test_message = "明日の朝9時にレポートを書く"
+    test_message = "明日の午前中に会議"
     result = analyze_task(test_message)
     print("Geminiの応答:\n", result)
