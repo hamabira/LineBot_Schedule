@@ -1,6 +1,8 @@
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
+from db import get_recent_chat_logs  # ここでdb.pyの関数をインポート
+
 
 # === APIキー読み込みとGemini初期化 ===
 try:
@@ -11,29 +13,41 @@ try:
         raise ValueError("❌ GEMINI_API_KEY が見つかりません。.env ファイルを確認してください。")
 
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-1.5-flash")  # モデルの指定
+    model = genai.GenerativeModel("gemini-2.0-flash")  # モデルの指定
 
 except Exception as e:
     print("🔴 Geminiの初期化エラー:", e)
     model = None  # エラーがあった場合はNoneを入れて後で使えないようにする
 
 # === AIによる予定解析関数 ===
-def analyze_task(message_text):
+def analyze_task(user_id, message_text):
     from datetime import datetime
 
     if model is None:
         return '{"action": "error", "response": "Geminiが初期化されていません。"}'
 
+    # 直近の会話履歴を取得してログ出力
+    logs = get_recent_chat_logs(user_id)
+    print("📝 直近の会話ログ:", logs)
+
     now = datetime.now()
     current_date = now.strftime("%Y-%m-%d")
     current_time = now.strftime("%H:%M")
 
+    chat_history = "\n".join([f"ユーザー: {log['message']}\nAI: {log['response']}" for log in logs])
+
     prompt = f"""
 あなたは優しく親しみやすい予定管理AIアシスタントです。
+敬語を使う必要はありません。明るくノリの良い優秀なアシスタントです。
 ユーザーの自然な発話から、必要があれば「予定管理」に関するアクションを抽出し、それ以外は雑談として受け取ってください。
 
 # 現在の日付と時刻
 今日の日付は {current_date} で、現在の時刻は {current_time} です。
+
+# 会話履歴：
+{chat_history}  # 直近のやり取りをここに追加
+
+
 
 アクションがある場合は、以下のJSON形式で返してください：
 {{
@@ -80,6 +94,8 @@ def analyze_task(message_text):
 
 # === テスト実行（開発中のチェック用） ===
 if __name__ == "__main__":
+    user_id = 123
     test_message = "明日の午前中に会議"
     result = analyze_task(test_message)
     print("Geminiの応答:\n", result)
+
