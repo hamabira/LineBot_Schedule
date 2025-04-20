@@ -93,3 +93,14 @@ def update_task(user_id, old_date, old_time, old_task, new_date, new_time, new_t
         return True
     session.close()
     return False
+
+def get_all_user_ids():
+    session = Session()
+    try:
+        user_ids = session.query(Task.user_id).distinct().all()
+        return [uid[0] for uid in user_ids]
+    except Exception as e:
+        print("❌ get_all_user_ids エラー:", e)
+        return []
+    finally:
+        session.close()
