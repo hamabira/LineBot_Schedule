@@ -71,6 +71,89 @@ def handle_message(event):
 
     try:
         import re
+        if user_message in ["今月の予定", "今月カレンダー", "今月のカレンダー"]:
+            now = datetime.now()
+            year = now.year
+            month = now.month
+            month_start = now.replace(day=1).date()
+            next_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
+            month_end = (next_month - timedelta(days=1)).date()
+            all_tasks = get_all_tasks(user_id)
+            filtered_tasks = [t for t in all_tasks if month_start <= datetime.strptime(t.date, "%Y-%m-%d").date() <= month_end]
+            filtered_tasks.sort(key=lambda t: (t.date, t.time))
+            if filtered_tasks:
+                flex_calendar_dict = build_month_calendar(filtered_tasks, year, month)
+                flex_message = FlexSendMessage(
+                    alt_text=f"{year}年{month}月の予定カレンダーだよ！",
+                    contents=flex_calendar_dict,
+                    quick_reply=make_quickreply_for_month(year, month)
+                )
+                line_bot_api.reply_message(event.reply_token, flex_message)
+            else:
+                response_text = f"📭 {year}年{month}月の予定は何もないみたい！"
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text=response_text,
+                    quick_reply=make_quickreply_for_month(year, month)
+                ))
+            save_chat_log(user_id, user_message, response_text)
+            return
+        if user_message in ["来月の予定", "来月カレンダー", "来月のカレンダー"]:
+            now = datetime.now()
+            next_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
+            year = next_month.year
+            month = next_month.month
+            # ここは「5月の予定」パターンの下のブロックそっくりに書けばOK！
+            month_start = datetime(year, month, 1).date()
+            n_month = (datetime(year, month, 28) + timedelta(days=4)).replace(day=1)
+            month_end = (n_month - timedelta(days=1)).date()
+            all_tasks = get_all_tasks(user_id)
+            filtered_tasks = [t for t in all_tasks if month_start <= datetime.strptime(t.date, "%Y-%m-%d").date() <= month_end]
+            filtered_tasks.sort(key=lambda t: (t.date, t.time))
+            if filtered_tasks:
+                flex_calendar_dict = build_month_calendar(filtered_tasks, year, month)
+                flex_message = FlexSendMessage(
+                    alt_text=f"{year}年{month}月の予定カレンダーだよ！",
+                    contents=flex_calendar_dict,
+                    quick_reply=make_quickreply_for_month(year, month)
+                )
+                line_bot_api.reply_message(event.reply_token, flex_message)
+            else:
+                response_text = f"📭 {year}年{month}月の予定は何もないみたい！"
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text=response_text,
+                    quick_reply=make_quickreply_for_month(year, month)
+                ))
+            save_chat_log(user_id, user_message, response_text)
+            return
+
+        if user_message in ["再来月の予定", "再来月カレンダー", "再来月のカレンダー"]:
+            now = datetime.now()
+            next_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
+            after_next_month = (next_month.replace(day=28) + timedelta(days=4)).replace(day=1)
+            year = after_next_month.year
+            month = after_next_month.month
+            month_start = datetime(year, month, 1).date()
+            n_month = (datetime(year, month, 28) + timedelta(days=4)).replace(day=1)
+            month_end = (n_month - timedelta(days=1)).date()
+            all_tasks = get_all_tasks(user_id)
+            filtered_tasks = [t for t in all_tasks if month_start <= datetime.strptime(t.date, "%Y-%m-%d").date() <= month_end]
+            filtered_tasks.sort(key=lambda t: (t.date, t.time))
+            if filtered_tasks:
+                flex_calendar_dict = build_month_calendar(filtered_tasks, year, month)
+                flex_message = FlexSendMessage(
+                    alt_text=f"{year}年{month}月の予定カレンダーだよ！",
+                    contents=flex_calendar_dict,
+                    quick_reply=make_quickreply_for_month(year, month)
+                )
+                line_bot_api.reply_message(event.reply_token, flex_message)
+            else:
+                response_text = f"📭 {year}年{month}月の予定は何もないみたい！"
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(
+                    text=response_text,
+                    quick_reply=make_quickreply_for_month(year, month)
+                ))
+            save_chat_log(user_id, user_message, response_text)
+            return
 
         # --- 「2026年5月の予定」「2025年12月のカレンダー」対応 ---
         m_jp_yyyy = re.match(r"^(\d{4})年(\d{1,2})月(の予定|のカレンダー|カレンダー|予定)?$", user_message)
