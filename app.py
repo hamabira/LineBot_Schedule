@@ -1,6 +1,7 @@
 import json
 import os
 import traceback
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from flask import Flask, request, abort
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -15,9 +16,9 @@ from db import add_task, get_all_tasks, delete_task_by_details, save_chat_log, u
 from flex_calendar_util import build_flex_calendar, build_month_calendar
 
 app = Flask(__name__)
-
-LINE_CHANNEL_ACCESS_TOKEN = 'Tv2tIB/qKJqSn5jiPnV/h+DBh2c66NDw82UuAbkuZvAdF5YJ7EkGwbpsQpJx7DqgymSd1iNfO49Zsz+m/2+JmcYs068O2Ku6JsOEFzJbhXwnUMg4+jx2otX+9pvSMAgZBRTGaa84PBRMJbwwBCcpWQdB04t89/1O/w1cDnyilFU='
-LINE_CHANNEL_SECRET = '031c826c752cd2ef1c10e86114d361b6'
+load_dotenv()
+LINE_CHANNEL_ACCESS_TOKEN =os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+LINE_CHANNEL_SECRET =os.getenv("LINE_CHANNEL_SECRET")
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
