@@ -489,4 +489,5 @@ if __name__ == "__main__":
     scheduler.add_job(push_today_schedule, 'cron', hour=22, minute=0)
     scheduler.start()
     print("全ユーザーに毎朝7時(JST)の自動通知が稼働したぜ！")
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
