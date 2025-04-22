@@ -1,11 +1,12 @@
 import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 
 from models import Task, ChatLog
-
+load_dotenv()
 # DB接続設定（RailwayのVariablesにDATABASE_URLをセットしておく！）
 DATABASE_URL = os.environ.get("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
