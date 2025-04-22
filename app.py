@@ -463,21 +463,25 @@ def handle_message(event):
         )
 
 def push_today_schedule():
-    today = datetime.now().date()
+    # UTCから日本時間に変換
+    now_utc = datetime.utcnow()
+    now_japan = now_utc + timedelta(hours=9)
+    today_japan = now_japan.date()
     user_ids = get_all_user_ids()
     for user_id in user_ids:
         all_tasks = get_all_tasks(user_id)
-        tasks_today = [t for t in all_tasks if t.date == today.strftime("%Y-%m-%d")]
-        message = make_day_response(tasks_today, today, "今日")
+        tasks_today = [t for t in all_tasks if t.date == today_japan.strftime("%Y-%m-%d")]
+        message = make_day_response(tasks_today, today_japan, "今日")
         try:
             line_bot_api.push_message(user_id, TextSendMessage(text=message))
-            print(f"{user_id} に今日の予定を送ったぜ！")
+            print(f"{user_id} に今日の予定を送ったぜ！（日本時間{today_japan}）")
         except Exception as e:
             print(f"{user_id} へのpushでエラー: {e}")
 
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
-    scheduler.add_job(push_today_schedule, 'cron', hour=7, minute=0)
+    # UTCで22時＝日本時間7時
+    scheduler.add_job(push_today_schedule, 'cron', hour=22, minute=0)
     scheduler.start()
-    print("全ユーザーに毎朝7時の自動通知が稼働したぜ！")
+    print("全ユーザーに毎朝7時(JST)の自動通知が稼働したぜ！")
     app.run(debug=True)
