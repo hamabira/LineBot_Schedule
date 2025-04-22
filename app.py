@@ -56,12 +56,17 @@ def make_quickreply_for_month(year, month):
 
 @app.route("/callback", methods=['POST'])
 def callback():
+    print("LINEからPOST受信！")  # ←まず最初に
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
+    print("BODY:", body)  # ←ここでリクエスト内容を表示
+
     try:
         handler.handle(body, signature)
+        print("handlerまでOK!")  # ←ここも
     except InvalidSignatureError:
         abort(400)
+    print("return直前！")
     return 'OK'
 
 @handler.add(MessageEvent, message=TextMessage)
