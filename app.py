@@ -1,6 +1,7 @@
 import json
 import os
 import traceback
+from push_today_schedule import push_today_schedule
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from flask import Flask, request, abort
@@ -22,6 +23,11 @@ LINE_CHANNEL_SECRET =os.getenv("LINE_CHANNEL_SECRET")
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(push_today_schedule, 'cron', hour=22, minute=0)
+scheduler.start()
+print("全ユーザーに毎朝7時(JST)の自動通知が稼働したぜ！")
 
 def make_day_response(task_list, date_obj, label):
     if not task_list:
@@ -485,12 +491,3 @@ def push_today_schedule():
             print(f"{user_id} に今日の予定を送ったぜ！（日本時間{today_japan}）")
         except Exception as e:
             print(f"{user_id} へのpushでエラー: {e}")
-
-if __name__ == "__main__":
-    scheduler = BackgroundScheduler()
-    # UTCで22時＝日本時間7時
-    scheduler.add_job(push_today_schedule, 'cron', hour=22, minute=0)
-    scheduler.start()
-    print("全ユーザーに毎朝7時(JST)の自動通知が稼働したぜ！")
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
