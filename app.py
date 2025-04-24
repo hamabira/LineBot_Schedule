@@ -1,7 +1,6 @@
 import json
 import os
 import traceback
-from push_today_schedule import push_today_schedule
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from flask import Flask, request, abort
@@ -23,6 +22,23 @@ LINE_CHANNEL_SECRET =os.getenv("LINE_CHANNEL_SECRET")
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+def push_today_schedule():
+    # UTCから日本時間に変換
+    now_utc = datetime.utcnow()
+    now_japan = now_utc + timedelta(hours=9)
+    today_japan = now_japan.date()
+    user_ids = get_all_user_ids()
+    for user_id in user_ids:
+        all_tasks = get_all_tasks(user_id)
+        tasks_today = [t for t in all_tasks if t.date == today_japan.strftime("%Y-%m-%d")]
+        message = make_day_response(tasks_today, today_japan, "今日")
+        try:
+            line_bot_api.push_message(user_id, TextSendMessage(text=message))
+            print(f"{user_id} に今日の予定を送ったぜ！（日本時間{today_japan}）")
+        except Exception as e:
+            print(f"{user_id} へのpushでエラー: {e}")
+
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(push_today_schedule, 'cron', hour=22, minute=0)
@@ -476,18 +492,4 @@ def handle_message(event):
             TextSendMessage(text=response_text)
         )
 
-def push_today_schedule():
-    # UTCから日本時間に変換
-    now_utc = datetime.utcnow()
-    now_japan = now_utc + timedelta(hours=9)
-    today_japan = now_japan.date()
-    user_ids = get_all_user_ids()
-    for user_id in user_ids:
-        all_tasks = get_all_tasks(user_id)
-        tasks_today = [t for t in all_tasks if t.date == today_japan.strftime("%Y-%m-%d")]
-        message = make_day_response(tasks_today, today_japan, "今日")
-        try:
-            line_bot_api.push_message(user_id, TextSendMessage(text=message))
-            print(f"{user_id} に今日の予定を送ったぜ！（日本時間{today_japan}）")
-        except Exception as e:
-            print(f"{user_id} へのpushでエラー: {e}")
+
