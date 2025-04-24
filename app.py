@@ -76,19 +76,19 @@ def make_quickreply_for_month(year, month):
         ]
     )
 
+import threading
+
 @app.route("/callback", methods=['POST'])
 def callback():
-    print("LINEからPOST受信！")  # ←まず最初に
+    print("LINEからPOST受信！")
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
-    print("BODY:", body)  # ←ここでリクエスト内容を表示
+    print("BODY:", body)
 
-    try:
-        handler.handle(body, signature)
-        print("handlerまでOK!")  # ←ここも
-    except InvalidSignatureError:
-        abort(400)
+    # handler.handleを別スレッドで非同期実行！
+    threading.Thread(target=handler.handle, args=(body, signature)).start()
     print("return直前！")
+    return 'OK', 200
     return 'OK',200
 @app.route("/")
 def hello():
