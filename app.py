@@ -79,7 +79,11 @@ def make_quickreply_for_month(year, month):
 
 import threading
 
-@app.route("/webhook", methods=['POST'])
+@app.route("/")
+def health_check():
+    return "Bot is alive!", 200
+
+@app.route("/callback", methods=['POST'])
 def callback():
     print("LINEからPOST受信！")
     signature = request.headers['X-Line-Signature']
