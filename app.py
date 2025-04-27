@@ -79,7 +79,7 @@ def make_quickreply_for_month(year, month):
 
 import threading
 
-@app.route("/callback", methods=['POST'])
+@app.route("/webhook", methods=['POST'])
 def callback():
     print("LINEからPOST受信！")
     signature = request.headers['X-Line-Signature']
