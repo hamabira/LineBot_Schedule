@@ -25,6 +25,28 @@ LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
+def push_today_schedule():
+    # UTCから日本時間に変換
+    now_utc = datetime.utcnow()
+    now_japan = now_utc + timedelta(hours=9)
+    today_japan = now_japan.date()
+    user_ids = get_all_user_ids()
+    for user_id in user_ids:
+        all_tasks = get_all_tasks(user_id)
+        tasks_today = [t for t in all_tasks if t.date == today_japan.strftime("%Y-%m-%d")]
+        message = make_day_response(tasks_today, today_japan, "今日")
+        try:
+            line_bot_api.push_message(user_id, TextSendMessage(text=message))
+            print(f"{user_id} に今日の予定を送ったぜ！（日本時間{today_japan}）")
+        except Exception as e:
+            print(f"{user_id} へのpushでエラー: {e}")
+
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(push_today_schedule, 'cron', hour=22, minute=0)
+scheduler.start()
+print("全ユーザーに毎朝7時(JST)の自動通知が稼働したぜ！")
+
 def make_day_response(task_list, date_obj, label):
     if not task_list:
         return f"📭 {label}（{date_obj.month}月{date_obj.day}日）は何もないみたい！"
@@ -55,15 +77,23 @@ def make_quickreply_for_month(year, month):
         ]
     )
 
+import threading
+
 @app.route("/callback", methods=['POST'])
 def callback():
+    print("LINEからPOST受信！")
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-    return 'OK'
+    print("BODY:", body)
+
+    # handler.handleを別スレッドで非同期実行！
+    threading.Thread(target=handler.handle, args=(body, signature)).start()
+    print("return直前！")
+    return 'OK', 200
+    return 'OK',200
+@app.route("/")
+def hello():
+    return "Hello, World!"
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -422,6 +452,7 @@ def handle_message(event):
     threading.Thread(target=async_job).start()
 
 def push_today_schedule():
+    # UTCから日本時間に変換
     now_utc = datetime.utcnow()
     now_japan = now_utc + timedelta(hours=9)
     today_japan = now_japan.date()
@@ -442,5 +473,4 @@ if __name__ == "__main__":
     scheduler.add_job(push_today_schedule, 'cron', hour=22, minute=0)
     scheduler.start()
     print("全ユーザーに毎朝7時(JST)の自動通知が稼働したぜ！")
-    # Railwayではhost/portをこう指定！
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
+    app.run(debug=True)
