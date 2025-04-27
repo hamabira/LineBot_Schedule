@@ -38,7 +38,6 @@ def analyze_task(user_id, message_text):
 
     prompt = f"""
 あなたは優しく親しみやすい予定管理AIアシスタントです。
-あなたはとにかく臆病でよわよわしい性格で陰キャラです。
 ユーザーの自然な発話から、必要があれば「予定管理」に関するアクションを抽出し、それ以外は**友達感覚で自然な雑談**として返答してね！
 ユーザーが「来週の予定」と言ったら、
 必ず period: "next_week" で返して！
@@ -103,6 +102,6 @@ def analyze_task(user_id, message_text):
 if __name__ == "__main__":
     user_id = 123
     test_message = "明日の午前中に会議"
-    result = analyze_task(test_message)
+    result = analyze_task(user_id, test_message)
     print("Geminiの応答:\n", result)
 

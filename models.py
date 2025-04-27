@@ -21,12 +21,14 @@ class ChatLog(Base):
     user_id = Column(String)
     message = Column(String)
     response = Column(String)
-    timestamp = Column(DateTime)  # ← datetime型で管理すると後で便利！
+    timestamp = Column(DateTime)  # datetime型で管理して便利！
 
-# RailwayのDATABASE_URLで接続（なければローカルSQLiteをfallback）
+# RailwayのPostgresだと「postgres://」で渡されることがあるので補正！
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///tasks.db")
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-# テーブル自動作成
+# テーブル自動作成（開発時やcreate_tables.pyで実行！）
 Base.metadata.create_all(engine)
