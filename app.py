@@ -71,8 +71,6 @@ def make_quickreply_for_month(year, month):
         ]
     )
 
-import threading
-
 @app.route("/")
 def health_check():
     return "Bot is alive!", 200
