@@ -41,12 +41,6 @@ def push_today_schedule():
         except Exception as e:
             print(f"{user_id} へのpushでエラー: {e}")
 
-
-scheduler = BackgroundScheduler()
-scheduler.add_job(push_today_schedule, 'cron', hour=22, minute=0)
-scheduler.start()
-print("全ユーザーに毎朝7時(JST)の自動通知が稼働したぜ！")
-
 def make_day_response(task_list, date_obj, label):
     if not task_list:
         return f"📭 {label}（{date_obj.month}月{date_obj.day}日）は何もないみたい！"
@@ -94,9 +88,6 @@ def callback():
     threading.Thread(target=handler.handle, args=(body, signature)).start()
     print("return直前！")
     return 'OK', 200
-@app.route("/")
-def hello():
-    return "Hello, World!"
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
