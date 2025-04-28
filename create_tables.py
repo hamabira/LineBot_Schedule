@@ -1,5 +1,5 @@
-from models import Base, engine
+from models import Base, engine, Task, ChatLog
 
-# これだけでOK！
+print("使ってるDB：", engine.url)
 Base.metadata.create_all(engine)
 print("テーブル作成できたぜ！")

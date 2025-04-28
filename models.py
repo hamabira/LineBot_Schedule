@@ -2,6 +2,10 @@ import os
 from sqlalchemy import Column, Integer, String, DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+
+# .envを読み込む
+load_dotenv()
 
 Base = declarative_base()
 
@@ -23,7 +27,7 @@ class ChatLog(Base):
     response = Column(String)
     timestamp = Column(DateTime)  # datetime型で管理して便利！
 
-# RailwayのPostgresだと「postgres://」で渡されることがあるので補正！
+# DATABASE_URLを.envから取得
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///tasks.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
