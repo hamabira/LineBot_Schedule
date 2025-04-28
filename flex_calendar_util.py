@@ -49,34 +49,53 @@ def build_flex_calendar(tasks, start_date=None):
     MAX = 3
     for idx in range(MAX):
         row = {"type":"box","layout":"horizontal","margin":"none","contents":[]}
-        for d in days:
-            day_tasks = [t for t in tasks if t.date==d.strftime("%Y-%m-%d")]
-            # ここで時間順に！
-            day_tasks.sort(key=lambda t: t.time)
-            txt = f"{day_tasks[idx].time} {day_tasks[idx].task}" if idx<len(day_tasks) else " "
+        for i, d in enumerate(days):
+            day_tasks = [t for t in tasks if t.date == d.strftime("%Y-%m-%d")]
+            day_tasks.sort(key=lambda t: t.time or "99:99")
+            if idx < len(day_tasks):
+                time_label = day_tasks[idx].time if day_tasks[idx].time else "未定"
+                txt = f"{time_label} {day_tasks[idx].task}"
+            else:
+                txt = " "
             row["contents"].append({
-                "type":"box","layout":"vertical",
-                "borderColor":"#cccccc","borderWidth":"1px",
-                "contents":[{"type":"text","text":txt,
-                             "size":"sm","align":"center",
-                             "color":"#333333","wrap":True}]
+                "type": "box",
+                "layout": "vertical",
+                "borderColor": "#cccccc",
+                "borderWidth": "1px",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": txt,
+                        "size": "sm",
+                        "align": "center",
+                        "wrap": True,
+                        "color": "#333333"
+                    }
+                ]
             })
         rows.append(row)
-        if idx<MAX-1:
-            rows.append({"type":"separator","margin":"none"})
+
 
     plus = {"type":"box","layout":"horizontal","margin":"none","contents":[]}
     for d in days:
-        day_tasks = [t for t in tasks if t.date==d.strftime("%Y-%m-%d")]
-        # 件数だけなので並び替え不要
-        rem = len(day_tasks)-MAX
-        txt = f"+{rem}件" if rem>0 else " "
+        day_tasks = [t for t in tasks if t.date == d.strftime("%Y-%m-%d")]
+        rem = len(day_tasks) - MAX
+        txt = f"+{rem}件" if rem > 0 else " "
         plus["contents"].append({
-            "type":"box","layout":"vertical",
-            "borderColor":"#cccccc","borderWidth":"1px",
-            "contents":[{"type":"text","text":txt,
-                         "size":"sm","align":"center",
-                         "color":"#888888","wrap":True}]
+            "type": "box",
+            "layout": "vertical",
+            "borderColor": "#cccccc",
+            "borderWidth": "1px",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": txt,
+                    "size": "sm",
+                    "align": "center",
+                    "color": "#888888",
+                    "wrap": True
+                }
+            ]
         })
     rows.append({"type":"separator","margin":"none"})
     rows.append(plus)
@@ -152,9 +171,8 @@ def build_month_calendar(tasks, year, month):
                 })
             else:
                 day_tasks = [t for t in tasks if t.date==d.strftime("%Y-%m-%d")]
-                # ここで時間順に並び替え！
-                day_tasks.sort(key=lambda t: t.time)
-                summary = f"{len(day_tasks)}件" if len(day_tasks)>0 else " "
+                day_tasks.sort(key=lambda t: t.time or "99:99")
+                summary = f"{len(day_tasks)}件の用事" if len(day_tasks)>0 else " "
                 row["contents"].append({
                     "type":"box","layout":"vertical",
                     "borderColor":"#cccccc","borderWidth":"1px",

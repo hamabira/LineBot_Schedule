@@ -7,19 +7,24 @@ from datetime import datetime
 
 from models import Task, ChatLog
 load_dotenv()
-# DB接続設定（RailwayのVariablesにDATABASE_URLをセットしておく！）
+
 DATABASE_URL = os.environ.get("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
+def _clean_time(val):
+    # "未定"や空文字、Noneは全部Noneにする
+    if val in [None, "", "未定"]:
+        return None
+    return val
+
 def add_task(user_id, date, time, task_content):
     with SessionLocal() as session:
         try:
-            # 時間未定（None, 空文字, 未指定）でもOKにする！
             task = Task(
                 user_id=user_id,
                 date=date,
-                time=time if time else None,  # ← 時間未定ならNoneで登録
+                time=_clean_time(time),
                 task=task_content
             )
             session.add(task)
@@ -88,16 +93,15 @@ def get_recent_chat_logs(user_id, limit=5):
 def update_task(user_id, old_date, old_time, old_task, new_date, new_time, new_task):
     with SessionLocal() as session:
         try:
-            # old_time, new_timeのどちらも「None」や「空文字」対応
             task = session.query(Task).filter_by(
                 user_id=user_id,
                 date=old_date,
-                time=old_time if old_time else None,
+                time=_clean_time(old_time),
                 task=old_task
             ).first()
             if task:
                 task.date = new_date
-                task.time = new_time if new_time else None
+                task.time = _clean_time(new_time)
                 task.task = new_task
                 session.commit()
                 return True
