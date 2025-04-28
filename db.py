@@ -15,7 +15,13 @@ SessionLocal = sessionmaker(bind=engine)
 def add_task(user_id, date, time, task_content):
     with SessionLocal() as session:
         try:
-            task = Task(user_id=user_id, date=date, time=time, task=task_content)
+            # 時間未定（None, 空文字, 未指定）でもOKにする！
+            task = Task(
+                user_id=user_id,
+                date=date,
+                time=time if time else None,  # ← 時間未定ならNoneで登録
+                task=task_content
+            )
             session.add(task)
             session.commit()
         except SQLAlchemyError as e:
@@ -82,12 +88,16 @@ def get_recent_chat_logs(user_id, limit=5):
 def update_task(user_id, old_date, old_time, old_task, new_date, new_time, new_task):
     with SessionLocal() as session:
         try:
+            # old_time, new_timeのどちらも「None」や「空文字」対応
             task = session.query(Task).filter_by(
-                user_id=user_id, date=old_date, time=old_time, task=old_task
+                user_id=user_id,
+                date=old_date,
+                time=old_time if old_time else None,
+                task=old_task
             ).first()
             if task:
                 task.date = new_date
-                task.time = new_time
+                task.time = new_time if new_time else None
                 task.task = new_task
                 session.commit()
                 return True

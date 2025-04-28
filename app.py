@@ -393,16 +393,23 @@ def handle_message(event):
                 else:
                     response_text = "❌ 削除条件が足りてないぞ！"
 
+            # ...（前略はそのまま）
+
             elif action == "add":
                 date = task_data.get("date")
                 time = task_data.get("time")
                 task_text = task_data.get("task")
-                if date and time and task_text:
+                if date and task_text:
+                    # timeがNoneや空文字でも登録OK！
                     add_task(user_id, date, time, task_text)
-                    response_text = f"✅ 予定を追加したぞ！\n📅 {date} {time}\n📝 {task_text}"
+                    if time:
+                        response_text = f"✅ 予定を追加したぞ！\n📅 {date} {time}\n📝 {task_text}"
+                    else:
+                        response_text = f"✅ 予定を追加したぞ！\n📅 {date}（時間未定）\n📝 {task_text}"
                 else:
                     response_text = "❌ 予定の追加に必要な情報が足りてないぞ！"
 
+            # ...（後略はそのまま）
             elif action == "update":
                 old_date = task_data.get("old_date")
                 old_time = task_data.get("old_time")
